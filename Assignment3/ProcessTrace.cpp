@@ -47,6 +47,7 @@ void ProcessTrace::Execute(void) {
   string line;                // text line read
   string cmd;                 // command from line
   vector<uint32_t> cmdArgs;   // arguments from line
+  process_number = 1;         // initialize the process count
   
   // Set up PMCB and empty 1st level page table
   vector<Addr> allocated;
@@ -56,8 +57,8 @@ void ProcessTrace::Execute(void) {
   
   // Select the command to execute
   while (ParseCommand(line, cmd, cmdArgs)) {
-    if (cmd == "alloc" ) {
-      CmdAlloc(line, cmd, cmdArgs);    // allocate memory
+    if (cmd == "quota" ) {
+      CmdQuota(line, cmd, cmdArgs);    // set quota for number of pages
     } else if (cmd == "compare") {
       CmdCompare(line, cmd, cmdArgs);  // get and compare multiple bytes
     } else if (cmd == "put") {
@@ -89,7 +90,7 @@ bool ProcessTrace::ParseCommand(
   // Read next line
   if (std::getline(trace, line)) {
     ++line_number;
-    cout << std::dec << line_number << ":" << line << "\n";
+    cout << std::dec << line_number << ":" << process_number << ":" << line << "\n";
     
     // If not comment
     if(line.at(0) != '#') {
@@ -116,28 +117,18 @@ bool ProcessTrace::ParseCommand(
   }
 }
 
-void ProcessTrace::CmdAlloc(const string &line, 
+
+void ProcessTrace::CmdQuota(const string &line, 
                             const string &cmd, 
                             const vector<uint32_t> &cmdArgs) {
-  // Get arguments
-  Addr vaddr = cmdArgs.at(0);
-  int count = cmdArgs.at(1) / kPageSize;
-  
-  // Switch to physical mode
-  memory.get_PMCB(vmem_pmcb);
-  memory.set_PMCB(pmem_pmcb);
-  
-  Addr pt_base = vmem_pmcb.page_table_base;
-  
-  // Allocate pages, initialized to writable
-  while (count-- > 0) {
-    AllocateAndMapPage(vaddr);
-    vaddr += 0x1000;
-  }
-  
-  // Switch back to virtual mode
-  memory.set_PMCB(vmem_pmcb); 
+    quota = cmdArgs.at(0);
+    // Keeps the process index from starting at 0
+    if (process_number != 1) {
+        process_number++;
+    }
 }
+
+
 
 void ProcessTrace::CmdCompare(const string &line,
                               const string &cmd,
