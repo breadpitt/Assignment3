@@ -120,6 +120,8 @@ private:
   std::string file_name;
   std::fstream trace;
   long line_number;
+  long process_number;
+  long quota;
 
   // Memory contents
   mem::MMU &memory;
@@ -150,7 +152,8 @@ private:
    * @param cmd command, converted to all lower case
    * @param cmdArgs arguments to command
    */
-  void CmdAlloc(const std::string &line, 
+
+  void CmdQuota(const std::string &line, 
                 const std::string &cmd, 
                 const std::vector<uint32_t> &cmdArgs);
   void CmdCompare(const std::string &line, 
