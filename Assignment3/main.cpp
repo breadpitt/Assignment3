@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     exit(1);
   }
   
-  mem::MMU memory(256);
+  mem::MMU memory(1024);
   PageFrameAllocator allocator(memory);
   ProcessTrace trace(memory, allocator, argv[1]);
   trace.Execute();
