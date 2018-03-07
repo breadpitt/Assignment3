@@ -156,6 +156,7 @@ private:
   void CmdQuota(const std::string &line, 
                 const std::string &cmd, 
                 const std::vector<uint32_t> &cmdArgs);
+  void CmdAlloc(const Addr addr);
   void CmdCompare(const std::string &line, 
               const std::string &cmd, 
               const std::vector<uint32_t> &cmdArgs);
