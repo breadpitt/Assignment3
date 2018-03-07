@@ -129,6 +129,27 @@ void ProcessTrace::CmdQuota(const string &line,
 }
 
 
+void ProcessTrace::CmdAlloc(const Addr addr) {
+  // Get arguments
+  Addr vaddr = addr;
+  //int count = cmdArgs.at(1) / kPageSize;
+  
+  // Switch to physical mode
+  memory.get_PMCB(vmem_pmcb);
+  memory.set_PMCB(pmem_pmcb);
+  
+  Addr pt_base = vmem_pmcb.page_table_base;
+  
+  // Allocate pages, initialized to writable
+  //while (count-- > 0) {
+    AllocateAndMapPage(vaddr);
+    vaddr += 0x1000;
+  //}
+  
+  // Switch back to virtual mode
+  memory.set_PMCB(vmem_pmcb); 
+}
+
 
 void ProcessTrace::CmdCompare(const string &line,
                               const string &cmd,
@@ -157,7 +178,7 @@ void ProcessTrace::CmdPut(const string &line,
                           const string &cmd,
                           const vector<uint32_t> &cmdArgs) {
   // Put multiple bytes starting at specified address
-  uint32_t addr = cmdArgs.at(0);
+  Addr addr = cmdArgs.at(0);
   size_t num_bytes = cmdArgs.size() - 1;
   uint8_t buffer[num_bytes];
   try {
@@ -166,7 +187,8 @@ void ProcessTrace::CmdPut(const string &line,
     }
     memory.put_bytes(addr, num_bytes, buffer);
   }  catch(PageFaultException e) {
-    PrintAndClearException("PageFaultException", e);
+      CmdAlloc(addr);
+      //PrintAndClearException("PageFaultException", e);
   }  catch(WritePermissionFaultException e) {
     PrintAndClearException("WritePermissionFaultException", e);
   }
