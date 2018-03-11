@@ -121,8 +121,8 @@ private:
   std::fstream trace;
   long line_number;
   long process_number;
-  long quota;
-
+  long quota; // Number of pages a process is allowed
+  long num_pages_alloc; // Keeps track of how many pages have been allocated
   // Memory contents
   mem::MMU &memory;
   
