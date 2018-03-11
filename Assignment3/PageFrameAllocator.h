@@ -1,20 +1,12 @@
-/*  PageAllocator - allocate pages in memory
- * 
- * File:   PageFrameAllocator.h
- * Author: Mike Goss <mikegoss@cs.du.edu>
- *
- * Created on February 2, 2018, 3:47 PM
- */
-
 #ifndef PAGEFRAMEALLOCATOR_H
 #define PAGEFRAMEALLOCATOR_H
 
-
-
 #include <MMU.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>
+
 using mem::Addr;
 
 class PageFrameAllocator {

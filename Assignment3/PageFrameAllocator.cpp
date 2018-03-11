@@ -1,11 +1,3 @@
-/*  PageAllocator - allocate pages in MMU memory
- * 
- * File:   PageFrameAllocator.cpp
- * Author: Mike Goss <mikegoss@cs.du.edu>
- * 
- * Created on February 2, 2018, 3:47 PM
- */
-
 #include "PageFrameAllocator.h"
 
 #include <array>

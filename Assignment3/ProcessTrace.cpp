@@ -1,13 +1,3 @@
-/*
- * ProcessTrace implementation 
- */
-
-/* 
- * File:   ProcessTrace.cpp
- * Author: Mike Goss <mikegoss@cs.du.edu>
- * 
- */
-
 #include "ProcessTrace.h"
 
 #include <algorithm>
@@ -15,6 +5,8 @@
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <cmath>
+//#include <math.h>
 
 using namespace mem;
 
@@ -28,58 +20,91 @@ using std::vector;
 
 ProcessTrace::ProcessTrace(MMU &memory_, 
                            PageFrameAllocator &allocator_, 
-                           string file_name_) 
-: memory(memory_), allocator(allocator_), file_name(file_name_), line_number(0) {
+                           string file_name_, int id)
+: memory(memory_), allocator(allocator_), file_name(file_name_), line_number(0), id_number(id), allocated_pages(0) {
   // Open the trace file.  Abort program if can't open.
   trace.open(file_name, std::ios_base::in);
   if (!trace.is_open()) {
     cerr << "ERROR: failed to open trace file: " << file_name << "\n";
     exit(2);
   }
+
+  vector<mem::Addr> allocated;
+
+  // Moved from Execute
+  memory.set_PMCB(pmem_pmcb);
+  allocator.Allocate(1, allocated);
+  vmem_pmcb = mem:PMCB(true, allocated[0]);
+  memory.set_PMCB(vmem_pmcb);
 }
 
 ProcessTrace::~ProcessTrace() {
   trace.close();
 }
 
-void ProcessTrace::Execute(void) {
+int ProcessTrace::Execute(int num_lines) {
   // Read and process commands
   string line;                // text line read
   string cmd;                 // command from line
   vector<uint32_t> cmdArgs;   // arguments from line
-  process_number = 1;         // initialize the process count
-  num_pages_alloc = 0;        // number of pages allocated
-  
-  // Set up PMCB and empty 1st level page table
-  vector<Addr> allocated;
-  allocator.Allocate(1, allocated);
-  vmem_pmcb = mem::PMCB(true, allocated[0]);  // initialize PMCB
+
+  //process_number = 1;         // initialize the process count
+  //num_pages_alloc = 0;        // number of pages allocated
+
+  // Virtual mode
   memory.set_PMCB(vmem_pmcb);
-  
-  // Select the command to execute
-  while (ParseCommand(line, cmd, cmdArgs)) {
-    if (cmd == "quota" ) {
-      CmdQuota(line, cmd, cmdArgs);    // set quota for number of pages
-    } else if (cmd == "compare") {
-      CmdCompare(line, cmd, cmdArgs);  // get and compare multiple bytes
-    } else if (cmd == "put") {
-      CmdPut(line, cmd, cmdArgs);      // put bytes
-    } else if (cmd == "fill") {
-      CmdFill(line, cmd, cmdArgs);     // fill bytes with value
-    } else if (cmd == "copy") {
-      CmdCopy(line, cmd, cmdArgs);     // copy bytes to dest from source
-    } else if (cmd == "dump") {
-      CmdDump(line, cmd, cmdArgs);     // dump byte values to output
-    } else if (cmd == "writable") {
-      CmdWritable(line, cmd, cmdArgs); // change writable status of page(s)
-    } else {
-      if(!cmd.empty()) { // if not comment
-        cerr << "ERROR: invalid command at line " << line_number << ":\n"
-                << line << "\n";
-        exit(2);
+
+  // Set up PMCB and empty 1st level page table
+  //vector<Addr> allocated;
+  //allocator.Allocate(1, allocated);
+  //vmem_pmcb = mem::PMCB(true, allocated[0]);  // initialize PMCB
+  //memory.set_PMCB(vmem_pmcb);
+
+  for (int i = 0; i < num_lines; ++i) {
+    // Select the command to execute
+    //while (ParseCommand(line, cmd, cmdArgs)) {
+    if (ParseCommand(line, cmd, cmdArgs)) {
+
+      if (cmd == "quota") {
+        CmdQuota(line, cmd, cmdArgs);    // set quota for number of pages
+      } else if (cmd == "compare") {
+        CmdCompare(line, cmd, cmdArgs);  // get and compare multiple bytes
+      } else if (cmd == "put") {
+        //CmdPut(line, cmd, cmdArgs);      // put bytes
+        if (!CmdPut(line, cmd, cmdArgs)) {
+          cerr << "Memory quota error: " << std::hex << QUOTA << "\n";
+          return i;
+        }
+      } else if (cmd == "fill") {
+        //CmdFill(line, cmd, cmdArgs);     // fill bytes with value
+        if (!CmdPut(line, cmd, cmdArgs)) {
+          cerr << "Memory quota error: " << std::hex << QUOTA << "\n";
+          return i;
+        }
+      } else if (cmd == "copy") {
+        //CmdCopy(line, cmd, cmdArgs);     // copy bytes to dest from source
+        if (!CmdPut(line, cmd, cmdArgs)) {
+          cerr << "Memory quota error: " << std::hex << QUOTA << "\n";
+          return i;
+        }
+      } else if (cmd == "dump") {
+        CmdDump(line, cmd, cmdArgs);     // dump byte values to output
+      } else if (cmd == "writable") {
+        CmdWritable(line, cmd, cmdArgs); // change writable status of page(s)
+      } else {
+        if (!cmd.empty()) { // if not comment
+          cerr << "ERROR: invalid command at line " << line_number << ":\n"
+               << line << "\n";
+          exit(2);
+        }
       }
+    } else {
+      return i;
     }
   }
+
+  memory.get_PMCB(vmem_pmcb);
+  return num_lines;
 }
 
 bool ProcessTrace::ParseCommand(
@@ -122,14 +147,16 @@ bool ProcessTrace::ParseCommand(
 void ProcessTrace::CmdQuota(const string &line, 
                             const string &cmd, 
                             const vector<uint32_t> &cmdArgs) {
-    quota = cmdArgs.at(0);
+    //quota = cmdArgs.at(0);
     // Keeps the process index from starting at 0 (just to match the print output)
-    if (process_number != 1) {
-        process_number++;
-    }
+    //if (process_number != 1) {
+    //    process_number++;
+    //}
+
+    QUOTA = cmdArgs.at(0);
 }
 
-
+/*
 void ProcessTrace::CmdAlloc(const Addr addr) {
   // Get arguments
   Addr vaddr = addr;
@@ -155,7 +182,7 @@ void ProcessTrace::CmdAlloc(const Addr addr) {
       std::cout << "error: quota exceeded\n"; // update later to terminate process
   }
 }
-
+*/
 
 void ProcessTrace::CmdCompare(const string &line,
                               const string &cmd,
@@ -176,32 +203,75 @@ void ProcessTrace::CmdCompare(const string &line,
       ++addr;
     }
   }  catch(PageFaultException e) {
-      CmdAlloc(addr);
-    //PrintAndClearException("PageFaultException", e);
+     // CmdAlloc(addr);
+    PrintAndClearException("PageFaultException", e);
   }
 }
 
-void ProcessTrace::CmdPut(const string &line,
+
+bool ProcessTrace::CmdPut(const string &line,
                           const string &cmd,
                           const vector<uint32_t> &cmdArgs) {
   // Put multiple bytes starting at specified address
-  Addr addr = cmdArgs.at(0);
+  //Addr addr = cmdArgs.at(0);
+  uint32_t addr = cmdArgs.at(0);
   size_t num_bytes = cmdArgs.size() - 1;
   uint8_t buffer[num_bytes];
-  try {
-    for(int i = 1; i < cmdArgs.size(); ++i) {
-      buffer[i - 1] = cmdArgs.at(i);
-    }
-    memory.put_bytes(addr, num_bytes, buffer);
-  }  catch(PageFaultException e) {
-      CmdAlloc(addr);
-      //PrintAndClearException("PageFaultException", e);
-  }  catch(WritePermissionFaultException e) {
-    PrintAndClearException("WritePermissionFaultException", e);
+
+  int num_pages = (num_bytes + kPageSize - 1) / kPageSize;
+  Addr bytes_written = 0;
+
+  for (int i = 1; i < cmdArgs.size(); ++i) {
+    buffer[i - 1] = cmdArgs.at(i);
   }
+
+  bool complete = false;
+
+  while (!complete) {
+
+    vmem_pmcb.operation_state = mem::PMCB::NONE;
+    memory.set_PMCB(vmem_pmcb);
+
+    try {
+      //for (int i = 1; i < cmdArgs.size(); ++i) {
+      //  buffer[i - 1] = cmdArgs.at(i);
+      //}
+
+      memory.put_bytes(addr, num_bytes, buffer);
+      bytes_written = num_bytes;
+
+    } catch (PageFaultException e) {
+      //CmdAlloc(addr);
+      memory.get_PMCB(vmem_pmcb);
+      bytes_written = vmem_pmcb.next_vaddress - addr;
+
+      if (bytes_written != num_bytes) {
+        if (allocated_pages == QUOTA) {
+          return false;
+        } else {
+          memory.set_PMCB(pmem_pmcb);
+          AllocateAndMapPage(vmem_pmcb.next_vaddress & mem::kPageNumberMask);
+
+          ++allocated_pages;
+        }
+      }
+      //PrintAndClearException("PageFaultException", e);
+    } catch (WritePermissionFaultException e) {
+      PrintAndClearException("WritePermissionFaultException", e);
+
+      complete = true;
+    }
+    if (bytes_written == num_bytes) {
+      complete = true;
+    }
+  }
+
+  memory.set_PMCB(vmem_pmcb);
+  return true;
 }
 
-void ProcessTrace::CmdCopy(const string &line,
+
+bool ProcessTrace::CmdCopy(const string &line,
                            const string &cmd,
                            const vector<uint32_t> &cmdArgs) {
   // Copy specified number of bytes to destination from source
@@ -210,47 +280,115 @@ void ProcessTrace::CmdCopy(const string &line,
   Addr num_bytes = cmdArgs.at(2);
   uint8_t buffer[num_bytes];
 
+  Addr bytes_written = 0;
+  int num_pages = num_bytes / kPageSize;
+
   // Try reading bytes
   Addr bytes_read = 0;  // number of successfully read bytes
   try {
     memory.get_bytes(buffer, src, num_bytes);
-    bytes_read = num_bytes;  // all bytes read
+    //bytes_read = num_bytes;  // all bytes read
   }  catch(PageFaultException e) {
     PrintAndClearException("PageFaultException on read", e);
-    memory.get_PMCB(vmem_pmcb);  // get address which cause exception
-    bytes_read = vmem_pmcb.next_vaddress - src;  // number of bytes read
+    //memory.get_PMCB(vmem_pmcb);  // get address which cause exception
+    //bytes_read = vmem_pmcb.next_vaddress - src;  // number of bytes read
   }
   
   // Try writing bytes
-  if(bytes_read != 0) {
+  bool filled = false;
+  while (!filled) {
+
+    vmem_pmcb.operation_state = mem::PMCB::NONE;
+    memory.set_PMCB(vmem_pmcb);
+
     try {
       memory.put_bytes(dst, bytes_read, buffer);
+      bytes_written = bytes_read;
+
     } catch(PageFaultException e) {
-      PrintAndClearException("PageFaultException on write", e);
+      //PrintAndClearException("PageFaultException on write", e);
+      memory.get_PMCB(vmem_pmcb);
+      bytes_written = vmem_pmcb.next_vaddress - dst;
+
+      if(bytes_written != bytes_read) {
+        if (allocated_pages == QUOTA) {
+          return false;
+        } else {
+          memory.set_PMCB(pmem_pmcb);
+          AllocateAndMapPage(vmem_pmcb.next_vaddress & mem::kPageNumberMask);
+
+          ++allocated_pages;
+        }
+      }
+
     } catch(WritePermissionFaultException e) {
       PrintAndClearException("WritePermissionFaultException", e);
+
+      filled = true;
+    }
+    if (bytes_writteen == bytes_read) {
+      filled = true;
     }
   }
+
+  memory.set_PMCB(vmem_pmcb);
+  return true;
 }
 
-void ProcessTrace::CmdFill(const string &line,
+
+// Also did work here -=-=- got a lot of this from the help section
+bool ProcessTrace::CmdFill(const string &line,
                            const string &cmd,
                            const vector<uint32_t> &cmdArgs) {
   // Fill a sequence of bytes with the specified value
   Addr addr = cmdArgs.at(0);
   Addr num_bytes = cmdArgs.at(1);
   uint8_t val = cmdArgs.at(2);
-  try {
-    for(int i = 0; i < num_bytes; ++i) {
-      memory.put_byte(addr++, &val);
+
+  Addr bytes_written = 0;
+  Addr starting_addr = cmdArgs.at(0);
+  bool filled = false;
+
+  while (!filled) {
+
+    vmem_pmcb.operation_state = mem::PMCB::NONE;
+    memory.set_PMCB(vmem_pmcb);
+
+    try {
+      for (int i = 0; i < num_bytes; ++i) {
+        memory.put_byte(addr++, &val);
+
+        ++addr;
+        ++bytes_written;
+      }
+    } catch (PageFaultException e) {
+
+      memory.get_PMCB(vmem_pmcb);
+      bytes_written = vmem_pmcb.next_vaddress - starting_addr;
+
+      if (bytes_written != num_bytes) {
+        if (allocated_pages == QUOTA) {
+          return false;
+        } else {
+
+          memory.set_PMCB(pmem_pmcb);
+          AllocatedAndMapPage(vmem_pmcb.next_vaddress & mem::kPageNumberMask);
+          ++allocated_pages;
+        }
+      }
+      //CmdAlloc(addr);
+      //PrintAndClearException("PageFaultException", e);
+    } catch (WritePermissionFaultException e) {
+      PrintAndClearException("WritePermissionFaultException", e);
+
+      filled = true;
     }
-  } catch(PageFaultException e) {
-      CmdAlloc(addr);
-    //PrintAndClearException("PageFaultException", e);
-  } catch(WritePermissionFaultException e) {
-    PrintAndClearException("WritePermissionFaultException", e);
   }
+
+  memory.set_PMCB(vmem_pmcb);
+  return true;
 }
+
 
 void ProcessTrace::CmdDump(const string &line,
                            const string &cmd,
@@ -280,6 +418,7 @@ void ProcessTrace::CmdDump(const string &line,
   }
 }
 
+
 void ProcessTrace::CmdWritable(const string &line,
                                const string &cmd,
                                const vector<uint32_t> &cmdArgs) {
@@ -304,6 +443,7 @@ void ProcessTrace::CmdWritable(const string &line,
   memory.set_PMCB(vmem_pmcb); 
 }
 
+
 void ProcessTrace::PrintAndClearException(const string &type, 
                                           MemorySubsystemException e) {
   memory.get_PMCB(vmem_pmcb);
@@ -316,6 +456,7 @@ void ProcessTrace::PrintAndClearException(const string &type,
   vmem_pmcb.operation_state = PMCB::NONE;
   memory.set_PMCB(vmem_pmcb);
 }
+
 
 void ProcessTrace::AllocateAndMapPage(Addr vaddr) {
   // Get offset in L1 table of L2 entry for vaddr  
@@ -359,6 +500,7 @@ void ProcessTrace::AllocateAndMapPage(Addr vaddr) {
   memory.put_bytes(l2_entry_addr, sizeof(PageTableEntry),
                  reinterpret_cast<uint8_t*> (&l2_entry));
 }
+
 
 void ProcessTrace::SetWritableStatus(Addr vaddr, bool writable) {
   // Get offset in L1 table of L2 entry for vaddr  

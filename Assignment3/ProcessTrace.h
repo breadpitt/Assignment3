@@ -113,17 +113,23 @@ public:
    * Execute - read and process commands from trace file
    * 
    */
-  void Execute(void);
+  void Execute(int num_lines);
+    int getID() {return id_number;}
+    int getLinesExecuted() {return line_number; }
   
 private:
   // Trace file
   std::string file_name;
   std::fstream trace;
   long line_number;
-  long process_number;
+  //long process_number;
+    int id_number;
+    int allocated_pages;
   long quota; // Number of pages a process is allowed
-  long num_pages_alloc; // Keeps track of how many pages have been allocated
-  // Memory contents
+    int QUOTA;
+  //long num_pages_alloc; // Keeps track of how many pages have been allocated
+
+    // Memory contents
   mem::MMU &memory;
   
   // Virtual and physical mode PMCBs
