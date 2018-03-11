@@ -170,7 +170,8 @@ void ProcessTrace::CmdCompare(const string &line,
       ++addr;
     }
   }  catch(PageFaultException e) {
-    PrintAndClearException("PageFaultException", e);
+      CmdAlloc(addr);
+    //PrintAndClearException("PageFaultException", e);
   }
 }
 
@@ -238,7 +239,8 @@ void ProcessTrace::CmdFill(const string &line,
       memory.put_byte(addr++, &val);
     }
   } catch(PageFaultException e) {
-    PrintAndClearException("PageFaultException", e);
+      CmdAlloc(addr);
+    //PrintAndClearException("PageFaultException", e);
   } catch(WritePermissionFaultException e) {
     PrintAndClearException("WritePermissionFaultException", e);
   }
@@ -266,6 +268,7 @@ void ProcessTrace::CmdDump(const string &line,
     }
     cout << "\n";
   } catch(PageFaultException e) {
+      CmdAlloc(addr);
     cout << "\n";
     PrintAndClearException("PageFaultException", e);
   }
