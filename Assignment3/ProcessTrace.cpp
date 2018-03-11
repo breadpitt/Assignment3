@@ -48,6 +48,7 @@ void ProcessTrace::Execute(void) {
   string cmd;                 // command from line
   vector<uint32_t> cmdArgs;   // arguments from line
   process_number = 1;         // initialize the process count
+  num_pages_alloc = 0;        // number of pages allocated
   
   // Set up PMCB and empty 1st level page table
   vector<Addr> allocated;
@@ -122,7 +123,7 @@ void ProcessTrace::CmdQuota(const string &line,
                             const string &cmd, 
                             const vector<uint32_t> &cmdArgs) {
     quota = cmdArgs.at(0);
-    // Keeps the process index from starting at 0
+    // Keeps the process index from starting at 0 (just to match the print output)
     if (process_number != 1) {
         process_number++;
     }
@@ -132,7 +133,8 @@ void ProcessTrace::CmdQuota(const string &line,
 void ProcessTrace::CmdAlloc(const Addr addr) {
   // Get arguments
   Addr vaddr = addr;
-  //int count = cmdArgs.at(1) / kPageSize;
+  
+  if (num_pages_alloc < quota){
   
   // Switch to physical mode
   memory.get_PMCB(vmem_pmcb);
@@ -147,7 +149,11 @@ void ProcessTrace::CmdAlloc(const Addr addr) {
   //}
   
   // Switch back to virtual mode
-  memory.set_PMCB(vmem_pmcb); 
+  memory.set_PMCB(vmem_pmcb);
+  }
+  else {
+      std::cout << "error: quota exceeded\n"; // update later to terminate process
+  }
 }
 
 
