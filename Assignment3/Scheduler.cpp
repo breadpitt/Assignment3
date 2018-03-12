@@ -4,7 +4,7 @@
 #include <iomanip>
 #include <sstream>
 #include <algorithm>
-
+#include <vector>
 
 Scheduler::Scheduler(std::vector<std::string> &file_names_, mem::MMU &memory_,
                      PageFrameAllocator &allocator_, int time_slice_)
@@ -19,7 +19,7 @@ Scheduler::~Scheduler() {
 }
 
 
-void Scheduler::ParseFiles(vector<std::string> &file_names_) {
+void Scheduler::ParseFiles(std::vector<std::string> &file_names_) {
 
     int id = 1;
 
