@@ -86,6 +86,7 @@
 #include <string>
 #include <vector>
 
+
 class ProcessTrace {
 public:
   /**
@@ -96,7 +97,7 @@ public:
    */
   ProcessTrace(mem::MMU &memory_,
                PageFrameAllocator &allocator,
-               std::string file_name_);
+               std::string file_name_, int id);
   
   /**
    * Destructor - close trace file, clean up processing
@@ -113,7 +114,7 @@ public:
    * Execute - read and process commands from trace file
    * 
    */
-  void Execute(int num_lines);
+  int Execute(int num_lines);
     int getID() {return id_number;}
     int getLinesExecuted() {return line_number; }
   
@@ -162,17 +163,17 @@ private:
   void CmdQuota(const std::string &line, 
                 const std::string &cmd, 
                 const std::vector<uint32_t> &cmdArgs);
-  void CmdAlloc(const Addr addr);
+  //void CmdAlloc(const Addr addr);
   void CmdCompare(const std::string &line, 
               const std::string &cmd, 
               const std::vector<uint32_t> &cmdArgs);
-  void CmdPut(const std::string &line, 
+  bool CmdPut(const std::string &line, 
               const std::string &cmd, 
               const std::vector<uint32_t> &cmdArgs);
-  void CmdFill(const std::string &line, 
+  bool CmdFill(const std::string &line, 
                const std::string &cmd, 
                const std::vector<uint32_t> &cmdArgs);
-  void CmdCopy(const std::string &line, 
+  bool CmdCopy(const std::string &line, 
                const std::string &cmd, 
                const std::vector<uint32_t> &cmdArgs);
   void CmdDump(const std::string &line, 
