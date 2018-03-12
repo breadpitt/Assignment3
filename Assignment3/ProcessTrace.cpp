@@ -34,7 +34,7 @@ ProcessTrace::ProcessTrace(MMU &memory_,
   // Moved from Execute
   memory.set_PMCB(pmem_pmcb);
   allocator.Allocate(1, allocated);
-  vmem_pmcb = mem:PMCB(true, allocated[0]);
+  vmem_pmcb = mem::PMCB(true, allocated[0]);
   memory.set_PMCB(vmem_pmcb);
 }
 
@@ -73,19 +73,19 @@ int ProcessTrace::Execute(int num_lines) {
         //CmdPut(line, cmd, cmdArgs);      // put bytes
         if (!CmdPut(line, cmd, cmdArgs)) {
           cerr << "Memory quota error: " << std::hex << QUOTA << "\n";
-          return i;
+          //return i;
         }
       } else if (cmd == "fill") {
         //CmdFill(line, cmd, cmdArgs);     // fill bytes with value
         if (!CmdPut(line, cmd, cmdArgs)) {
           cerr << "Memory quota error: " << std::hex << QUOTA << "\n";
-          return i;
+          //return i;
         }
       } else if (cmd == "copy") {
         //CmdCopy(line, cmd, cmdArgs);     // copy bytes to dest from source
         if (!CmdPut(line, cmd, cmdArgs)) {
           cerr << "Memory quota error: " << std::hex << QUOTA << "\n";
-          return i;
+         // return i;
         }
       } else if (cmd == "dump") {
         CmdDump(line, cmd, cmdArgs);     // dump byte values to output
@@ -99,7 +99,7 @@ int ProcessTrace::Execute(int num_lines) {
         }
       }
     } else {
-      return i;
+      //return i;
     }
   }
 
@@ -116,7 +116,7 @@ bool ProcessTrace::ParseCommand(
   // Read next line
   if (std::getline(trace, line)) {
     ++line_number;
-    cout << std::dec << line_number << ":" << process_number << ":" << line << "\n";
+    cout << std::dec << line_number << ":" << line << "\n";
     
     // If not comment
     if(line.at(0) != '#') {
@@ -326,7 +326,7 @@ bool ProcessTrace::CmdCopy(const string &line,
 
       filled = true;
     }
-    if (bytes_writteen == bytes_read) {
+    if (bytes_written == bytes_read) {
       filled = true;
     }
   }
@@ -372,7 +372,7 @@ bool ProcessTrace::CmdFill(const string &line,
         } else {
 
           memory.set_PMCB(pmem_pmcb);
-          AllocatedAndMapPage(vmem_pmcb.next_vaddress & mem::kPageNumberMask);
+          AllocateAndMapPage(vmem_pmcb.next_vaddress & mem::kPageNumberMask);
           ++allocated_pages;
         }
       }
@@ -412,7 +412,7 @@ void ProcessTrace::CmdDump(const string &line,
     }
     cout << "\n";
   } catch(PageFaultException e) {
-      CmdAlloc(addr);
+      //CmdAlloc(addr);
     cout << "\n";
     PrintAndClearException("PageFaultException", e);
   }
@@ -458,7 +458,7 @@ void ProcessTrace::PrintAndClearException(const string &type,
 }
 
 
-void ProcessTrace::AllocateAndMapPage(Addr vaddr) {
+void ProcessTrace::AllocateAndMapPage(mem::Addr vaddr) {
   // Get offset in L1 table of L2 entry for vaddr  
   Addr pt_base = vmem_pmcb.page_table_base;
   Addr pt_l1_offset = vaddr >> (kPageSizeBits + kPageTableSizeBits);
