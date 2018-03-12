@@ -1,10 +1,4 @@
 
-/*
- * Assignment 3
- *
- * Group 5 v4  Robert Zachrich & James Shannon
- */
-
 #ifndef PROCESSTRACE_H
 #define PROCESSTRACE_H
 
