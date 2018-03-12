@@ -1,78 +1,8 @@
-/*
- * ProcessTrace - execute memory trace file in the following format:
- * 
- * Trace records contain multiple fields, separated by white space (blanks 
- * and tabs). Each line consists of a command field, followed by optional 
- * arguments to the command. The command field is case sensitive.
- * 
- * The trace file will contain the following record types. All numerical values 
- * (including counts) are hexadecimal (base 16), without a leading "0x". 
- * Any output should also use hexadecimal format for numeric data.
- * 
- * Allocate Memory
- * alloc vaddr size
- * Allocate virtual memory for size bytes, starting at virtual address vaddr. 
- * The starting address, vaddr, and the byte count, size, must be exact 
- * multiples of the page size (0x1000). The first line of the file must be an 
- * alloc command. Subsequent alloc commands add additional blocks of allocated 
- * virtual memory, they do not remove earlier allocations. All pages should be 
- * marked Writable in the 1st and 2nd level page tables when initially allocated.
- * All newly-allocated memory must be initialized to all 0.
- * 
- * Compare bytes
- * compare addr expected_values
- * Compares bytes starting at addr; expected_values is a list of byte values, 
- * separated by white space. If the actual values of bytes starting at addr 
- * don't match the expected_values, write an error message to standard error 
- * for each mismatch with the address, the expected value, and the actual value 
- * (all in hexadecimal).
- * 
- * Put Bytes
- * put addr values
- * Store values starting at addr; values is a list of byte values, separated 
- * by white space. 
- * 
- * Fill Bytes
- * fill addr count value
- * Store count copies of value starting at addr.
- * 
- * Copy Bytes
- * copy dest_addr src_addr count
- * Copy count bytes from src_addr to dest_addr. The source and destination 
- * ranges will not overlap.
- * 
- * Dump Bytes
- * dump addr count
- * 
- * Write a line with addr to standard output, followed on separate lines by 
- * count bytes starting at addr. Write 16 bytes per line, with a space between 
- * adjacent values. For example, to print the 24 bytes starting at 3fa700:
- * 
- * 3fa700
- *  00 12 f3 aa 00 00 00 a0 ff ff e7 37 21 08 6e 00
- *  55 a5 9a 9b 9c ba fa f0
- * 
- * Writable Status
- * writable vaddr size status
- * Change the writable status of size bytes of memory, starting at virtual 
- * address vaddr. The starting address, vaddr, and the byte count, size, must be 
- * exact multiples of the page size (0x1000). If status is 0, the Writable bit 
- * in the 2nd level page table should be cleared for all Present pages in the 
- * range, otherwise the Writable bit in the 2nd level page table should be set 
- * for all Present pages in the range. Any pages in the range which are not 
- * Present should be ignored. The 1st level page table should not be changed.
- * 
- * Comment
- * # comment text
- * The # character in the first column means the remainder of the line should 
- * be treated as a comment. The command should be echoed to output in the same 
- * way as other commands, but should otherwise be ignored.
- */
 
-/* 
- * File:   ProcessTrace.h
- * Author: Mike Goss <mikegoss@cs.du.edu>
+/*
+ * Assignment 3
  *
+ * Group 5 v4  Robert Zachrich & James Shannon
  */
 
 #ifndef PROCESSTRACE_H
