@@ -46,6 +46,7 @@ private:
     void ParseFiles(std::vector<std::string> &file_names_);
     void getNextIndex(int& currentIndex);
 
+    
 };
 
 #endif //ASSIGNMENT3_SCHEDULER_H
