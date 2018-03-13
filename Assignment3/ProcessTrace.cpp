@@ -48,17 +48,8 @@ int ProcessTrace::Execute(int num_lines) {
   string cmd;                 // command from line
   vector<uint32_t> cmdArgs;   // arguments from line
 
-  //process_number = 1;         // initialize the process count
-  //num_pages_alloc = 0;        // number of pages allocated
-
   // Virtual mode
   memory.set_PMCB(vmem_pmcb);
-
-  // Set up PMCB and empty 1st level page table
-  //vector<Addr> allocated;
-  //allocator.Allocate(1, allocated);
-  //vmem_pmcb = mem::PMCB(true, allocated[0]);  // initialize PMCB
-  //memory.set_PMCB(vmem_pmcb);
 
   for (int i = 0; i < num_lines; ++i) {
     // Select the command to execute
@@ -116,7 +107,7 @@ bool ProcessTrace::ParseCommand(
   // Read next line
   if (std::getline(trace, line)) {
     ++line_number;
-    cout << std::dec << line_number << ":" << line << "\n";
+    cout << line_number << ":" << getID() << ":" << line << "\n";
     
     // If not comment
     if(line.at(0) != '#') {
